@@ -1,0 +1,336 @@
+<head>
+	<title>Data Visualizer</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
+
+	<script type="text/javascript">
+		var dateOutput = { "genia": {"word": {}, "pos": {}}, "postmed": {"word": {}, "pos": {}}} //dict
+
+		$(document).ready(function() {
+		    console.log("ready!");
+
+		    var journal_root = "http://localhost/research/Journals"
+
+
+
+			$.ajax({
+			dataType: "json",
+			url: "http://localhost/research/data.json",
+			success: (data) => {
+
+				//Fetch GET var
+				const urlParams = new URLSearchParams(window.location.search);
+				const pos = urlParams.get('d');
+				console.log("Fetch for: "+pos)
+				console.log(data[pos])
+				const word = urlParams.get('w');
+
+
+				//Data to table
+				for(var key in data[pos]['words']) {
+					if(data[pos]['words'][key][0] == word){
+
+						const genia = data[pos]['words'][key][1];
+						const postmed = data[pos]['words'][key][2]
+
+						console.log(genia)
+						console.log(postmed)
+						console.log("\n")
+
+						genia_file = genia.split("|")[0]
+						genia_line = (genia.split("|")[1]).split("/")[0]
+						genia_word = (genia.split("|")[1]).split("/")[1]
+
+						postmed_file = postmed.split("|")[0]
+						postmed_line = (postmed.split("|")[1]).split("/")[0]
+						postmed_word = (postmed.split("|")[1]).split("/")[1]
+
+
+
+						
+						$.ajax({
+							url: journal_root+"/"+genia_file,
+							success: (genia_data) => {
+
+
+									$.ajax({
+										url: journal_root+"/"+postmed_file,
+										success: (postmed_data) => {
+
+											//Access each file.
+											console.log("Accessing "+ journal_root+"/"+genia_file)
+											console.log("Accessing "+ journal_root+"/"+postmed_file)
+
+											//Grab the appropriate line for each
+											genia_line_data = genia_data.split("\n")[genia_line-1].split(" ");
+											postmed_line_data = postmed_data.split("\n")[postmed_line-1].split(" ");
+
+											//Itterate over both lines in sync ensuring we do not miss tailing word in either sent
+											for (var i = 0; i < Math.max(genia_line_data.length, postmed_line_data.length); i++) {
+											
+												/*
+												class_swap = "";
+												if((i+1) == genia_word){
+													class_swap = "class='the_word'";
+												}
+												else if(genia_line_data[i].split("_")[1] != postmed_line_data[i].split("/")[1]){
+													class_swap = "class='a_diff'";
+												}*/
+
+												current_word = genia_line_data[i]
+												current_word_postmed = postmed_line_data[i]
+												if((i+1) == genia_word && typeof(current_word) != undefined && typeof(current_word_postmed) != undefined){
+
+													//Correct index for word mismatch
+													current_word = current_word.split("_")[0]
+
+													//GENIA
+													console.log("HERE: "+genia_line_data.length)
+													console.log("index: "+i)
+													
+													if(i > 1){
+														prior_word = genia_line_data[i-1].split("_")[0]
+													}
+													else{
+														prior_word = "SOL"
+													}
+													if(i != Math.max(genia_line_data.length, postmed_line_data.length)-1){
+														following_word = genia_line_data[i+1].split("_")[0]
+													}
+													else{
+														following_word = "EOL"
+													}
+
+													current_word_pos = genia_line_data[i].split("_")[1]
+													if(i > 1){
+														prior_word_pos = genia_line_data[i-1].split("_")[1]
+													}
+													else{
+														prior_word_pos = "SOL"
+													}
+													if(i != Math.max(genia_line_data.length, postmed_line_data.length)-1){
+														following_word_pos = genia_line_data[i+1].split("_")[1]
+													}
+													else{
+														following_word_pos = "EOL"
+													}
+
+
+													//Add to DB - using combinations strategy for data
+
+													//add word to db
+													if(prior_word+"_"+following_word in dateOutput['genia']['word']){
+														dateOutput['genia']['word'][prior_word+"_"+following_word] = dateOutput['genia']['word'][prior_word+"_"+following_word] + 1
+													}
+													else{
+														dateOutput['genia']['word'][prior_word+"_"+following_word] = 1
+													}
+
+													//add pos to db
+													if(prior_word_pos+"_"+following_word_pos in dateOutput['genia']['pos']){
+														dateOutput['genia']['pos'][prior_word_pos+"_"+following_word_pos] = dateOutput['genia']['pos'][prior_word_pos+"_"+following_word_pos] + 1
+													}
+													else{
+														dateOutput['genia']['pos'][prior_word_pos+"_"+following_word_pos] = 1
+													}
+
+
+
+
+													current_word_postmed = current_word_postmed.split("/")[0]
+
+													//GENIA
+													console.log("HERE: "+postmed_line_data.length)
+													console.log("index: "+i)
+													
+													if(i > 1){
+														prior_word = postmed_line_data[i-1].split("/")[0]
+													}
+													else{
+														prior_word = "SOL"
+													}
+													if(i != Math.max(postmed_line_data.length, postmed_line_data.length)-1){
+														following_word = postmed_line_data[i+1].split("/")[0]
+													}
+													else{
+														following_word = "EOL"
+													}
+
+													current_word_pos = postmed_line_data[i].split("/")[1]
+													if(i > 1){
+														prior_word_pos = postmed_line_data[i-1].split("/")[1]
+													}
+													else{
+														prior_word_pos = "SOL"
+													}
+													if(i != Math.max(postmed_line_data.length, postmed_line_data.length)-1){
+														following_word_pos = postmed_line_data[i+1].split("/")[1]
+													}
+													else{
+														following_word_pos = "EOL"
+													}
+
+
+													//Add to DB - using combinations strategy for data
+
+													//add word to db
+													if(prior_word+"_"+following_word in dateOutput['postmed']['word']){
+														dateOutput['postmed']['word'][prior_word+"_"+following_word] = dateOutput['postmed']['word'][prior_word+"_"+following_word] + 1
+													}
+													else{
+														dateOutput['postmed']['word'][prior_word+"_"+following_word] = 1
+													}
+
+													//add pos to db
+													if(prior_word_pos+"_"+following_word_pos in dateOutput['postmed']['pos']){
+														dateOutput['postmed']['pos'][prior_word_pos+"_"+following_word_pos] = dateOutput['postmed']['pos'][prior_word_pos+"_"+following_word_pos] + 1
+													}
+													else{
+														dateOutput['postmed']['pos'][prior_word_pos+"_"+following_word_pos] = 1
+													}
+
+
+
+
+
+
+
+
+												}
+
+												//Data out
+
+												
+
+
+
+											}
+
+
+										console.log(dateOutput)
+										}
+									});
+
+							}
+						});
+
+
+
+
+						
+					}
+				
+
+
+				}
+				
+				$("#pos_h").html(pos.replace("|", " | ") + " / " + word)
+
+
+			}
+			});
+
+
+		});
+	</script>
+	<script type="text/javascript">
+		function renderDataOut(){
+			//render table from data every word, note only one word will have rendered any data so not that important
+			//$("#genia_pos_body").html(""); //clear
+			$("#genia_pos_body").html("");		
+			for(key in dateOutput['genia']['pos']){
+				$("#genia_pos_body").append("<tr><td>"+key+"</td><td>"+dateOutput['genia']['pos'][key]+"</td></tr>");					
+			}
+
+
+			$("#genia_word_body").html("");		
+			for(key in dateOutput['genia']['word']){
+				$("#genia_word_body").append("<tr><td>"+key+"</td><td>"+dateOutput['genia']['word'][key]+"</td></tr>");					
+			}
+
+
+			$("#postmed_pos_body").html("");		
+			for(key in dateOutput['postmed']['pos']){
+				$("#postmed_pos_body").append("<tr><td>"+key+"</td><td>"+dateOutput['postmed']['pos'][key]+"</td></tr>");					
+			}
+
+
+			$("#postmed_word_body").html("");		
+			for(key in dateOutput['postmed']['word']){
+				$("#postmed_word_body").append("<tr><td>"+key+"</td><td>"+dateOutput['postmed']['word'][key]+"</td></tr>");					
+			}
+
+			$('#genia_pos').DataTable();
+			$('#genia_word').DataTable();
+			$('#postmed_pos').DataTable();
+			$('#postmed_word').DataTable();
+
+		}
+	</script>
+</head>
+<body style="padding:25px;">
+	
+	<div id="nav">
+		<h1 id="pos_h"></h1>
+		<a onClick="renderDataOut()" href="#">Click to Render</a>
+		<h2>Genia POS Context</h2>
+		<table id="genia_pos" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>POS Pattern</th>
+				<th>Frequency</th>
+			</tr>
+			</thead>
+			<tbody id="genia_pos_body">
+			</tbody>
+
+		</table>
+
+		<h2>Genia word Context</h2>
+		<table id="genia_word" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>Word Pattern</th>
+				<th>Frequency</th>
+			</tr>
+			</thead>
+			<tbody id="genia_word_body">
+			</tbody>
+
+		</table>
+
+		<h2>Postmed POS Context</h2>
+		<table id="postmed_pos" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>POS Pattern</th>
+				<th>Frequency</th>
+			</tr>
+			</thead>
+			<tbody id="postmed_pos_body">
+			</tbody>
+
+		</table>
+
+		<h2>Postmed word Context</h2>
+		<table id="postmed_word" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>Word Pattern</th>
+				<th>Frequency</th>
+			</tr>
+			</thead>
+			<tbody id="postmed_word_body">
+			</tbody>
+
+		</table>
+
+	</div>	
+
+
+
+
+</body>

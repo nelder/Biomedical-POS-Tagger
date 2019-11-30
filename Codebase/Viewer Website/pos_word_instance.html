@@ -1,0 +1,138 @@
+<head>
+	<title>Data Visualizer</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	<style type="text/css">
+		hr{
+			margin:0px;
+			margin-top:3px;
+			margin-bottom:3px;
+		}
+		.the_word{
+			font-weight: bold;
+			background-color:#333333;
+			color:white;
+		}
+		.a_diff{
+			background-color:lightblue;
+		}
+	</style>
+
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+		    console.log("ready!");
+
+		    var journal_root = "http://localhost/research/Journals"
+
+			$.ajax({
+			dataType: "json",
+			url: "http://localhost/research/data.json",
+			success: (data) => {
+
+				//Fetch GET var
+				const urlParams = new URLSearchParams(window.location.search);
+				const pos = urlParams.get('d');
+				console.log("Fetch for: "+pos)
+				console.log(data[pos])
+				const word = urlParams.get('w');
+				const genia = atob(urlParams.get('g'));
+				const postmed = atob(urlParams.get('p'));
+
+				console.log(genia)
+				console.log(postmed)
+
+				genia_file = genia.split("|")[0]
+				genia_line = (genia.split("|")[1]).split("/")[0]
+				genia_word = (genia.split("|")[1]).split("/")[1]
+
+				postmed_file = postmed.split("|")[0]
+				postmed_line = (postmed.split("|")[1]).split("/")[0]
+				postmed_word = (postmed.split("|")[1]).split("/")[1]
+
+
+				$("body").append("<b>Source Documents</b><br><u>Genia</u>: "+genia+"<br><u>Postmed</u>: "+postmed+"");
+
+
+				console.log("Accessing "+ journal_root+"/"+genia_file)
+				console.log("Accessing "+ journal_root+"/"+postmed_file)
+				$.ajax({
+					url: journal_root+"/"+genia_file,
+					success: (genia_data) => {
+
+
+							$.ajax({
+								url: journal_root+"/"+postmed_file,
+								success: (postmed_data) => {
+
+									$("body").append("<br><br><b>Source Text Genia</b><br>"+genia_data.split("\n")[genia_line-1]);
+									$("body").append("<br><br><b>Source Text Postmed</b><br>"+postmed_data.split("\n")[postmed_line-1]);
+
+
+									//Grab the appropriate line for each
+									genia_line_data = genia_data.split("\n")[genia_line-1].split(" ");
+									postmed_line_data = postmed_data.split("\n")[postmed_line-1].split(" ");
+
+									//Itterate over both lines in sync ensuring we do not miss tailing word in either sent
+									for (var i = 0; i < Math.max(genia_line_data.length, postmed_line_data.length); i++) {
+									
+										class_swap = "";
+										if((i+1) == genia_word){
+											class_swap = "class='the_word'";
+										}
+										else if(genia_line_data[i].split("_")[1] != postmed_line_data[i].split("/")[1]){
+											class_swap = "class='a_diff'";
+										}
+
+
+										$("#nav_table_body").append("<tr><td "+class_swap+">"+genia_line_data[i].split("_")[0]+" <i style='color:grey;font-size:12px;'>"+genia_line_data[i].split("_")[1]+"</i></td><td "+class_swap+">"+postmed_line_data[i].split("/")[0]+" <i style='color:grey;font-size:12px;'>"+postmed_line_data[i].split("/")[1]+"</i></td></tr>");
+										
+
+
+
+									}
+
+
+
+								}
+							});
+
+					}
+				});
+
+				$("#pos_h").html(pos.replace("|", " | ") + " / " + word + " / diff instance")
+
+
+			}
+			});
+
+
+		});
+	</script>
+</head>
+<body style="padding:25px;">
+	
+	<div id="nav">
+		<h1 id="pos_h"></h1>
+		
+		<table id="nav_table" class="table table-striped table-bordered table-sm"  border=1 style="width:30%;">
+			<thead>
+			<tr>
+				<th>Genia</th>
+				<th>Postmed</th>
+			</tr>
+			</thead>
+			<tbody id="nav_table_body">
+
+			</tbody>
+
+		</table>
+
+	</div>	
+
+
+
+
+</body>

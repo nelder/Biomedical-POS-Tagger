@@ -1,0 +1,94 @@
+<head>
+	<title>Data Visualizer</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+		    console.log("ready!");
+
+			$.ajax({
+			dataType: "json",
+			url: "http://localhost/research/data.json",
+			success: (data) => {
+				console.log((data))
+
+				//Calculate total count for frequency
+				total = 0
+				for(var key in data) {
+					total = total + data[key]['pos_frequency']
+
+				}
+
+				var sorted_array = [];
+				for(var key in data) {
+					sorted_array.push([data[key]['pos_frequency'], key]);
+				}
+				//sorted_array.sort();
+				sorted_array.sort((a,b) => a[0]-b[0]);
+				sorted_array.reverse();
+
+				cum_freq = 0
+				for (var i = 0; i < sorted_array.length; i++) {
+					key = sorted_array[i][1]
+					cum_freq = cum_freq + (Math.round((data[key]['pos_frequency'] / total * 100) * 100) / 100)
+
+					//Calculate posdiff comp freq
+					//data[key]['pos_frequency']
+					a = key.split("|")[1].split(":")[1]
+					b = key.split("|")[0].split(":")[1]
+					comp_key = "G:"+a+"|P:"+b
+
+					comp_amt = typeof data[comp_key] !== 'undefined' ? data[comp_key]['pos_frequency'] : 0
+					
+					
+
+					$("#nav_table_body").append("<tr><td><a href='pos.html?d="+key+"'>"+key.replace("|", " | ") + "</a></td><td>"+data[key]['pos_frequency']+"</td><td>"+Math.round((data[key]['pos_frequency'] / total * 100) * 100) / 100+"%</td><td>"+(Math.round((cum_freq / 100 * 100) * 100) / 100)+"%</td><td>"+Object.keys(data[key]['words_freq']).length+"</td><td>"+Math.round(data[key]['pos_frequency']/Object.keys(data[key]['words_freq']).length)+"</td><td>"+comp_amt+" <a style='font-size:10px' href='pos.html?d="+comp_key+"'>link</a></td></tr>")				   
+				}
+
+				//Print out all data
+				//for(var key in data) {
+
+				//}
+
+				//Make table sortable
+				$('#nav_table').DataTable();
+
+
+			}
+			});
+
+
+		});
+	</script>
+</head>
+<body style="padding:25px;">
+	
+	<div id="nav">
+		<table id="nav_table" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>Part of Speech</th>
+				<th>Frequency Count</th>
+				<th>Frequency %</th>
+				<th>Cumulative Frequency</th>
+				<th>Unique Words</th>
+				<th>Instances/Word</th>
+				<th>POSDiff-C Freq</th>
+			</tr>
+			</thead>
+			<tbody id="nav_table_body">
+
+			</tbody>
+
+		</table>
+
+	</div>
+
+
+
+
+</body>

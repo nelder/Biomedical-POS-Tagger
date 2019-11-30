@@ -1,0 +1,71 @@
+<head>
+	<title>Data Visualizer</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+		    console.log("ready!");
+
+			$.ajax({
+			dataType: "json",
+			url: "http://localhost/research/data.json",
+			success: (data) => {
+
+				//Fetch GET var
+				const urlParams = new URLSearchParams(window.location.search);
+				const pos = urlParams.get('d');
+				console.log("Fetch for: "+pos)
+				console.log(data[pos])
+				const word = urlParams.get('w');
+
+
+				//Data to table
+				for(var key in data[pos]['words']) {
+					if(data[pos]['words'][key][0] == word){
+						$("#nav_table_body").append("<tr><td><a href='pos_word_instance.html?d="+pos+"&w="+word+"&g="+btoa(data[pos]['words'][key][1])+"&p="+btoa(data[pos]['words'][key][2])+"'>"+data[pos]['words'][key][0]+"</a></td><td>"+data[pos]['words'][key][1]+"</td><td>"+data[pos]['words'][key][2]+"</td></tr>")
+					}
+				}
+
+				$("#pos_h").html(pos.replace("|", " | ") + " / " + word)
+
+				$("#detail_view").attr("href", "pos_word_more.html?d="+pos+"&w="+word);
+
+				//Make table sortable
+				$('#nav_table').DataTable();
+
+			}
+			});
+
+
+		});
+	</script>
+</head>
+<body style="padding:25px;">
+	
+	<div id="nav">
+		<h1 id="pos_h"></h1>
+		<a id="detail_view" href="#">Word Context Details</a><br>
+		<table id="nav_table" class="table table-striped table-bordered table-sm"  border=1>
+			<thead>
+			<tr>
+				<th>Word Occurrence Instance</th>
+				<th>Genia Line</th>
+				<th>Postmed Line</th>
+			</tr>
+			</thead>
+			<tbody id="nav_table_body">
+
+			</tbody>
+
+		</table>
+
+	</div>	
+
+
+
+
+</body>
